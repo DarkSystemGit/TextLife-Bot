@@ -135,24 +135,26 @@ async function genHistory(){
 }
 
 async function prompt(history, name,msg) {
-  var prompt = [{ text: `Prompt ${msg}` },{ text: `Emotions ${users[name].emo.join()}` },
+  //console.log(users[name],name)
+  var prompt = [{ text: `Prompt ${msg}` },{ text: `Emotions ${users[name].emo}` },
   { text: `Predispostions ${users[name].pre.join()}` },
   { text: "output: " }]
   var prev=[].concat(training);
   history.forEach((elm)=>{
-    prev.push([{ text: `User ${elm.username}` },{ text: `Emotions ${elm.emo.join()}` },{ text: `Predispostions ${elm.pre.join()}` }])
+    prev.push(...[{ text: `User ${elm.username}` },{ text: `Emotions ${elm.emo}` },{ text: `Predispostions ${elm.pre.join()}` }])
   })
   history.push({username:'user',emo:'neutral',pre:['none'],msg})
   prev=prev.concat(prompt)
   const genAI = new GoogleGenerativeAI(API_KEY);
   const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+  //console.log(prev)
   var ai=await model.generateContent({
-    contents: [{ role: "user", prev }],
+    contents: [{ role: "user", parts:prev }],
     generationConfig,
     safetySettings,
   })
-  //users[name]=
-  return ai.response.text()
+  users[name].emo=ai.response.text().split('mood ')[1].replace('mood ','')
+  return ai.response.text().split('mood ')[0].replace('mood ','')
 }
 function weightedRand(spec) {
   var i, sum=0, r=Math.random();
@@ -205,10 +207,12 @@ async function run(){
           console.log(await globalThis[command[1]](command.slice(1)))
       }
     }else{
-      var user = Object.keys(users)[weightedRand(weights[0])]
-      prompt(history,user,text)
+      var name=weightedRand(weights[0])
+      var user = Object.keys(users)[name]
+      console.log(user,name,weights[0],Object.keys(users))
+      console.log(`${user}:`,await prompt(history,user,text))
     }
 
-  }}catch(e){console.log(e);/*run()*/}
+  }}catch(e){/*console.log(e,users);*/console.clear();run()}
 }
 run()
