@@ -7,9 +7,47 @@ const {
   HarmCategory,
   HarmBlockThreshold,
 } = require("@google/generative-ai");
+import { WebSocketServer } from 'ws';
+
+const wss = new WebSocketServer({ port: 8080 });
+console.log('Starting...')
+  var history=this.history=await genHistory()
+  var map={}
+  console.log('Ready!')
+ 
+wss.on('connection', function connection(ws) {
+  ws.on('error', console.error);
+
+  ws.on('message', async function message(data) {
+    
+    var weights=generateWeights(history);
+    
+    var text=await readLineAsync('>')
+
+    text.trim()
+    if(text.indexOf('$')==0){
+      var command = text.replace('$','').split(' ')
+      //console.log(command)
+      switch(command[0]){
+        case 'read':
+          console.log(this[command[1]])
+        case 'run':
+          console.log(await globalThis[command[1]](command.slice(1)))
+      }
+    }else{
+      var name=weightedRand(weights[0])
+      var user = Object.keys(users)[name]
+      //console.log(user,name,weights[0],Object.keys(users))
+      console.log(`${user}:`,await prompt(history,user,text))
+    }
+  });
+
+  
+});
 const readLineAsync = (prmpt) => {
   const rl = require('readline').createInterface({
-    input: process.stdin
+    input: process.stdin,
+    output: process.stdout
   });
   
   return new Promise((resolve) => {
