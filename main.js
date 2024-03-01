@@ -209,7 +209,7 @@ async function run(){
     }else{
       var name=weightedRand(weights[0])
       var user = Object.keys(users)[name]
-      console.log(user,name,weights[0],Object.keys(users))
+      //console.log(user,name,weights[0],Object.keys(users))
       console.log(`${user}:`,await prompt(history,user,text))
     }
 
