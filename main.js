@@ -8,21 +8,23 @@ const {
   HarmBlockThreshold,
 } = require("@google/generative-ai");
 const wsl = require('ws');
-
+const weightedRand = require('weightedrand')
 const wss = new wsl.WebSocketServer({ port: 6078 });
-wss.on('connection', async function connection(ws) {
+
+wss.on('connection', async function(ws) {
   
-  async function run(ws){
-  try{
+
+  
   ws.send('Starting...')
-  var history=this.history=await genHistory()
+  var history=this.history=history||await genHistory()
   var map={}
   ws.send('Ready!')
-  console.log(history)
-  ws.on('messsage',async (text)=>{
-    var weights=generateWeights(history);
-    
-    console.log(text)
+  //console.log(history)
+  ws.on('message',async function msg(text){
+    try{
+    var weights=generateWeights(history,users);
+    text=text.toString()
+    //console.log(text)
 
     text.trim()
     if(text.indexOf('$')==0){
@@ -35,16 +37,17 @@ wss.on('connection', async function connection(ws) {
           ws.send(await globalThis[command[1]](command.slice(1)))
       }
     }else{
-      var name=weightedRand(weights[0])
-      var user = Object.keys(users)[name]
-      //console.log(user,name,weights[0],Object.keys(users))
-      ws.send(`${user}:`,await prompt(history,user,text))
+      var name=weightedRand(weights,Object.keys(users))
+      var user = users[name]
+      //console.log(user,name,weights,Object.keys(users))
+      ws.send(`${user.username}: ${await prompt(history,user.username,text)}`)
     }
-
+  }catch(e){msg(text)}
   })
-  }catch(e){/*console.log(e,users);*/console.log(e)}
-}
-  await run(ws)
+  ws.on('error',console.error)
+  
+
+  //await run(ws)
 })
 
 const MODEL_NAME = "gemini-1.0-pro";
@@ -182,21 +185,17 @@ async function prompt(history, name,msg) {
     generationConfig,
     safetySettings,
   })
+  //console.log(ai.response.text())
   users[name].emo=ai.response.text().split('mood ')[1].replace('mood ','')
+  console.log(name+':',ai.response.text().split('mood ')[0].replace('mood ',''))
   return ai.response.text().split('mood ')[0].replace('mood ','')
 }
-function weightedRand(spec) {
-  var i, sum=0, r=Math.random();
-  for (i in spec) {
-    sum += spec[i];
-    if (r <= sum) return i;
-  }
-}
-function generateWeights(his){
+
+function generateWeights(his,users){
   var res={}
   var positions=[]
   var emotions=[]
-  var map={}
+  var map=new Map()
   var total=0
 
   Object.keys(users).forEach((user,i)=>{
@@ -211,8 +210,12 @@ function generateWeights(his){
     names[user]=pos
     emotions.push(getEmoRating(his[pos].emo))
   })
-  positions.forEach((pos,i)=>{res[i]=0.02*(((total/100)*pos)+emotions[i]);names[Object.keys(names)[Object.values(names).indexOf(pos)]]=res[i]})
-  return [res,map]
+  positions.forEach((pos,i)=>{
+    res[i]=0.02*(((total/100)*pos)+emotions[i]);
+    //console.log(users[i],users)
+    map.set(Object.keys(users)[i],res[i])
+  })
+  return map
 }
 
 //run()

@@ -2,6 +2,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.2.1",
     "dotenv": "^16.4.5",
+    "weightedrand": "^1.2.0",
     "ws": "^8.16.0"
   },
   "scripts": {
