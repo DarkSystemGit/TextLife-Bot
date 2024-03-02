@@ -9,22 +9,40 @@ const {
 } = require("@google/generative-ai");
 const wsl = require('ws');
 
-const wss = new wsl.WebSocketServer({ port: 8080 });
+const wss = new wsl.WebSocketServer({ port: 6078 });
 wss.on('connection', function connection(ws) {
-  const duplex = createWebSocketStream(ws, { encoding: 'utf8' });
-  duplex.on('error', console.error);
-  const readLineAsync = (prmpt) => {
-    const rl = require('readline').createInterface({
-      input: duplex,
-      output: duplex
-    });
+  
+  async function run(ws){
+  try{
+  ws.send('Starting...')
+  var history=this.history=await genHistory()
+  var map={}
+  ws.send('Ready!')
+  ws.on('messsage',async (text)=>{
+    var weights=generateWeights(history);
     
-    return new Promise((resolve) => {
-      rl.question(prmpt,(line)=>{
-        resolve(line)
-      })
-    });
-  };
+
+
+    text.trim()
+    if(text.indexOf('$')==0){
+      var command = text.replace('$','').split(' ')
+      //console.log(command)
+      switch(command[0]){
+        case 'read':
+          ws.send(this[command[1]])
+        case 'run':
+          ws.send(await globalThis[command[1]](command.slice(1)))
+      }
+    }else{
+      var name=weightedRand(weights[0])
+      var user = Object.keys(users)[name]
+      //console.log(user,name,weights[0],Object.keys(users))
+      ws.send(`${user}:`,await prompt(history,user,text))
+    }
+
+  })
+  }catch(e){/*console.log(e,users);*/console.log(e)}
+}
   run(ws)
 })
 
@@ -195,34 +213,5 @@ function generateWeights(his){
   positions.forEach((pos,i)=>{res[i]=0.02*(((total/100)*pos)+emotions[i]);names[Object.keys(names)[Object.values(names).indexOf(pos)]]=res[i]})
   return [res,map]
 }
-async function run(ws){
-  try{
-  ws.send('Starting...')
-  var history=this.history=await genHistory()
-  var map={}
-  ws.send('Ready!')
-  while(true){
-    var weights=generateWeights(history);
-    
-    var text=await readLineAsync('>')
 
-    text.trim()
-    if(text.indexOf('$')==0){
-      var command = text.replace('$','').split(' ')
-      //console.log(command)
-      switch(command[0]){
-        case 'read':
-          console.log(this[command[1]])
-        case 'run':
-          console.log(await globalThis[command[1]](command.slice(1)))
-      }
-    }else{
-      var name=weightedRand(weights[0])
-      var user = Object.keys(users)[name]
-      //console.log(user,name,weights[0],Object.keys(users))
-      ws.send(`${user}:`,await prompt(history,user,text))
-    }
-
-  }}catch(e){/*console.log(e,users);*/console.log(e)}
-}
 //run()
