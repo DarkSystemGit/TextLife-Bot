@@ -10,7 +10,7 @@ const {
 const wsl = require('ws');
 
 const wss = new wsl.WebSocketServer({ port: 6078 });
-wss.on('connection', function connection(ws) {
+wss.on('connection', async function connection(ws) {
   
   async function run(ws){
   try{
@@ -18,10 +18,11 @@ wss.on('connection', function connection(ws) {
   var history=this.history=await genHistory()
   var map={}
   ws.send('Ready!')
+  console.log(history)
   ws.on('messsage',async (text)=>{
     var weights=generateWeights(history);
     
-
+    console.log(text)
 
     text.trim()
     if(text.indexOf('$')==0){
@@ -43,7 +44,7 @@ wss.on('connection', function connection(ws) {
   })
   }catch(e){/*console.log(e,users);*/console.log(e)}
 }
-  run(ws)
+  await run(ws)
 })
 
 const MODEL_NAME = "gemini-1.0-pro";
