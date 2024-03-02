@@ -7,55 +7,27 @@ const {
   HarmCategory,
   HarmBlockThreshold,
 } = require("@google/generative-ai");
-import { WebSocketServer } from 'ws';
+const wsl = require('ws');
 
-const wss = new WebSocketServer({ port: 8080 });
-console.log('Starting...')
-  var history=this.history=await genHistory()
-  var map={}
-  console.log('Ready!')
- 
+const wss = new wsl.WebSocketServer({ port: 8080 });
 wss.on('connection', function connection(ws) {
-  ws.on('error', console.error);
-
-  ws.on('message', async function message(data) {
+  const duplex = createWebSocketStream(ws, { encoding: 'utf8' });
+  duplex.on('error', console.error);
+  const readLineAsync = (prmpt) => {
+    const rl = require('readline').createInterface({
+      input: duplex,
+      output: duplex
+    });
     
-    var weights=generateWeights(history);
-    
-    var text=await readLineAsync('>')
+    return new Promise((resolve) => {
+      rl.question(prmpt,(line)=>{
+        resolve(line)
+      })
+    });
+  };
+  run(ws)
+})
 
-    text.trim()
-    if(text.indexOf('$')==0){
-      var command = text.replace('$','').split(' ')
-      //console.log(command)
-      switch(command[0]){
-        case 'read':
-          console.log(this[command[1]])
-        case 'run':
-          console.log(await globalThis[command[1]](command.slice(1)))
-      }
-    }else{
-      var name=weightedRand(weights[0])
-      var user = Object.keys(users)[name]
-      //console.log(user,name,weights[0],Object.keys(users))
-      console.log(`${user}:`,await prompt(history,user,text))
-    }
-  });
-
-  
-});
-const readLineAsync = (prmpt) => {
-  const rl = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  
-  return new Promise((resolve) => {
-    rl.question(prmpt,(line)=>{
-      resolve(line)
-    })
-  });
-};
 const MODEL_NAME = "gemini-1.0-pro";
 const API_KEY = process.env.KEY;
 const generationConfig = {
@@ -223,12 +195,12 @@ function generateWeights(his){
   positions.forEach((pos,i)=>{res[i]=0.02*(((total/100)*pos)+emotions[i]);names[Object.keys(names)[Object.values(names).indexOf(pos)]]=res[i]})
   return [res,map]
 }
-async function run(){
+async function run(ws){
   try{
-  console.log('Starting...')
+  ws.send('Starting...')
   var history=this.history=await genHistory()
   var map={}
-  console.log('Ready!')
+  ws.send('Ready!')
   while(true){
     var weights=generateWeights(history);
     
@@ -248,9 +220,9 @@ async function run(){
       var name=weightedRand(weights[0])
       var user = Object.keys(users)[name]
       //console.log(user,name,weights[0],Object.keys(users))
-      console.log(`${user}:`,await prompt(history,user,text))
+      ws.send(`${user}:`,await prompt(history,user,text))
     }
 
-  }}catch(e){/*console.log(e,users);*/console.clear();run()}
+  }}catch(e){/*console.log(e,users);*/console.log(e)}
 }
-run()
+//run()
