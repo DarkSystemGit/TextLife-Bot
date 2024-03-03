@@ -40,6 +40,7 @@ wss.on('connection', async function(ws) {
       var name=weightedRand(weights,Object.keys(users))
       var user = users[name]
       //console.log(user,name,weights,Object.keys(users))
+      //console.log(weights)
       ws.send(`${user.username}: ${await prompt(history,user.username,text)}`)
     }
   }catch(e){msg(text)}
@@ -58,7 +59,7 @@ const generationConfig = {
   topP: 1,
   maxOutputTokens: 255,
 };
-const training=[{text: "Use the emotions and predisposition fields to generate a response to a Prompt"},
+const training=[{text: "Use the emotions and predisposition fields to generate a text-message like response to a Prompt in less than 50 chars. Emojis may be used and are reccomended. Talk like a teen"},
 {text: "Prompt Why are you so mean to me"},
 {text: "Emotions Angry,Sad"},
 {text: "Predispostions Passive Agressive"},
@@ -211,7 +212,7 @@ function generateWeights(his,users){
     emotions.push(getEmoRating(his[pos].emo))
   })
   positions.forEach((pos,i)=>{
-    res[i]=0.02*(((total/100)*pos)+emotions[i]);
+    res[i]=0.04*(((total/100)*pos)+emotions[i]-.02);
     //console.log(users[i],users)
     map.set(Object.keys(users)[i],res[i])
   })
