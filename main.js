@@ -1,5 +1,4 @@
-// node --version # Should be >= 18
-// npm install @google/generative-ai
+//Key in .env
 require("dotenv").config()
 const process=require('process')
 const {
@@ -9,11 +8,11 @@ const {
 } = require("@google/generative-ai");
 const wsl = require('ws');
 const weightedRand = require('weightedrand')
-const wss = new wsl.WebSocketServer({ port: 6078 });
+const wss = new wsl.WebSocketServer({ port: process.argv[2] });
 
 wss.on('connection', async function(ws) {
   
-  var last=new Date()
+  var last=new Date().getTime()
   var run=false
   
   ws.send('Starting...')
@@ -49,8 +48,8 @@ wss.on('connection', async function(ws) {
   }catch(e){msg(text)}
   })
   setInterval(()=>{
-    //if(new Date.now())msg()
-  },1000)
+    if(Math.floor((new Date().getTime()-last)/1000)>30&&(!run))msg('')
+  },10000)
   
   ws.on('error',console.error)
   
@@ -66,6 +65,7 @@ const generationConfig = {
   topP: 1,
   maxOutputTokens: 255,
 };
+//General instructions and training data for Gemini
 const training=[{text: "Use the emotions and predisposition fields to generate a text-message like response to a Prompt in less than 50 chars. Emojis may be used and are reccomended. Talk like a teen. Remember, youre in a group chat"},
 {text: "Prompt Why are you so mean to me"},
 {text: "Emotions Angry,Sad"},
