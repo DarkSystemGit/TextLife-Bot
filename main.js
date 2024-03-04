@@ -13,7 +13,8 @@ const wss = new wsl.WebSocketServer({ port: 6078 });
 
 wss.on('connection', async function(ws) {
   
-
+  var last=new Date()
+  var run=false
   
   ws.send('Starting...')
   var history=this.history=history||await genHistory()
@@ -22,6 +23,7 @@ wss.on('connection', async function(ws) {
   //console.log(history)
   ws.on('message',async function msg(text){
     try{
+      run=true
     var weights=generateWeights(history,users);
     text=text.toString()
     //console.log(text)
@@ -43,8 +45,13 @@ wss.on('connection', async function(ws) {
       //console.log(weights)
       ws.send(`${user.username}: ${await prompt(history,user.username,text)}`)
     }
+    run=false
   }catch(e){msg(text)}
   })
+  setInterval(()=>{
+    //if(new Date.now())msg()
+  },1000)
+  
   ws.on('error',console.error)
   
 
@@ -59,7 +66,7 @@ const generationConfig = {
   topP: 1,
   maxOutputTokens: 255,
 };
-const training=[{text: "Use the emotions and predisposition fields to generate a text-message like response to a Prompt in less than 50 chars. Emojis may be used and are reccomended. Talk like a teen"},
+const training=[{text: "Use the emotions and predisposition fields to generate a text-message like response to a Prompt in less than 50 chars. Emojis may be used and are reccomended. Talk like a teen. Remember, youre in a group chat"},
 {text: "Prompt Why are you so mean to me"},
 {text: "Emotions Angry,Sad"},
 {text: "Predispostions Passive Agressive"},
@@ -169,12 +176,12 @@ async function genHistory(){
 
 async function prompt(history, name,msg) {
   //console.log(users[name],name)
-  var prompt = [{ text: `Prompt ${msg}` },{ text: `Emotions ${users[name].emo}` },
+  var prompt = [{ text: `User user` },{ text: `Prompt ${msg}` },{ text: `Emotions ${users[name].emo}` },
   { text: `Predispostions ${users[name].pre.join()}` },
   { text: "output: " }]
   var prev=[].concat(training);
   history.forEach((elm)=>{
-    prev.push(...[{ text: `User ${elm.username}` },{ text: `Emotions ${elm.emo}` },{ text: `Predispostions ${elm.pre.join()}` }])
+    prev.push(...[{ text: `User ${elm.username}` },{ text: `Prompt ${elm.msg}` },{ text: `Emotions ${elm.emo}` },{ text: `Predispostions ${elm.pre.join()}` }])
   })
   history.push({username:'user',emo:'neutral',pre:['none'],msg})
   prev=prev.concat(prompt)
@@ -188,6 +195,7 @@ async function prompt(history, name,msg) {
   })
   //console.log(ai.response.text())
   users[name].emo=ai.response.text().split('mood ')[1].replace('mood ','')
+  history.push({username:'user',emo:users[name].emo,pre:users[name].pre,msg:ai.response.text().split('mood ')[0].replace('mood ','')})
   console.log(name+':',ai.response.text().split('mood ')[0].replace('mood ',''))
   return ai.response.text().split('mood ')[0].replace('mood ','')
 }
