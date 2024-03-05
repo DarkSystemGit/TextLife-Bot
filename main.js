@@ -198,8 +198,9 @@ async function prompt(history, name,msg) {
   //console.log(ai.response.text())
   users[name].emo=ai.response.text().split('mood ')[1].replace('mood ','')
   history.push({username:'user',emo:users[name].emo,pre:users[name].pre,msg:ai.response.text().split('mood ')[0].replace('mood ','')})
-  console.log(name+':',ai.response.text().split('mood ')[0].replace('mood ',''))
-  return ai.response.text().split('mood ')[0].replace('mood ','')
+  var res= ai.response.text().split('mood ')[0].replace('mood ','')
+  console.log(name+':',res)
+  return  res.split('output: ').slice(-1)
 }
 
 function generateWeights(his,users){
