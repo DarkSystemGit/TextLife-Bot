@@ -2,7 +2,7 @@
 
 const s= require('ws')
 
-const ws = new s.WebSocket('ws://localhost:6078');
+const ws = new s.WebSocket('ws://localhost:'+process.argv[2]);
 
 
 ws.on('error', console.error);
