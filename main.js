@@ -20,7 +20,7 @@ wss.on('connection', async function(ws) {
   var map={}
   ws.send('Ready!')
   //console.log(history)
-  ws.on('message',async function msg(text){
+  async function msg(text){
     try{
       run=true
     var weights=generateWeights(history,users);
@@ -46,7 +46,8 @@ wss.on('connection', async function(ws) {
     }
     run=false
   }catch(e){msg(text)}
-  })
+  }
+  ws.on('message',(e)=>msg(e))
   setInterval(()=>{
     if(Math.floor((new Date().getTime()-last)/1000)>30&&(!run))msg('')
   },10000)
