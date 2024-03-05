@@ -28,6 +28,7 @@ wss.on('connection', async function(ws) {
     //console.log(text)
 
     text.trim()
+    console.log('Received:',text)
     if(text.indexOf('$')==0){
       var command = text.replace('$','').split(' ')
       //console.log(command)
